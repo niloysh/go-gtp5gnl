@@ -104,6 +104,10 @@ var CmdTree = CmdNodeList{
 				Name: "urr",
 				Next: CmdFunc(CmdListURR),
 			},
+			CmdToken{
+				Name: "stats",
+				Next: CmdFunc(CmdListPDRStats),
+			},
 		},
 	},
 }

@@ -31,6 +31,52 @@ type PDR struct {
 	SEID            *uint64
 }
 
+const (
+	PDR_STATS_PDR_ID = iota + 1
+	PDR_STATS_PDR_SEID
+	PDR_STATS_UL_PKT_CNT
+	PDR_STATS_DL_PKT_CNT
+	PDR_STATS_UL_BYTE_CNT
+	PDR_STATS_DL_BYTE_CNT
+)
+
+type PDRStats struct {
+	ID          uint16
+	SEID        uint64
+	UL_PKT_CNT  uint64
+	DL_PKT_CNT  uint64
+	UL_BYTE_CNT uint64
+	DL_BYTE_CNT uint64
+}
+
+func DecodePDRStats(b []byte) (*PDRStats, error) {
+	pdrstat := new(PDRStats)
+	for len(b) > 0 {
+		hdr, n, err := nl.DecodeAttrHdr(b)
+		if err != nil {
+			return nil, err
+		}
+		switch hdr.MaskedType() {
+		case PDR_STATS_PDR_ID:
+			pdrstat.ID = native.Uint16(b[n:])
+		case PDR_STATS_PDR_SEID:
+			pdrstat.SEID = native.Uint64(b[n:])
+		case PDR_STATS_UL_PKT_CNT:
+			pdrstat.UL_PKT_CNT = native.Uint64(b[n:])
+		case PDR_STATS_DL_PKT_CNT:
+			pdrstat.DL_PKT_CNT = native.Uint64(b[n:])
+		case PDR_STATS_UL_BYTE_CNT:
+			pdrstat.UL_BYTE_CNT = native.Uint64(b[n:])
+		case PDR_STATS_DL_BYTE_CNT:
+			pdrstat.DL_BYTE_CNT = native.Uint64(b[n:])
+		default:
+			log.Printf("unknown type: %v\n", hdr.Type)
+		}
+		b = b[hdr.Len.Align():]
+	}
+	return pdrstat, nil
+}
+
 func DecodePDR(b []byte) (*PDR, error) {
 	pdr := new(PDR)
 	for len(b) > 0 {

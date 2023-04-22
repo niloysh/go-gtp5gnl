@@ -16,13 +16,15 @@ import (
 // o PDR_QER_ID: u32
 // o PDR_PDI {
 // o   PDI_UE_ADDR_IPV4: u32
-// o   PDI_F_TEID {
-//       F_TEID_I_TEID: u32
-//       F_TEID_GTPU_ADDR_IPV4: u32
-//     }
-// o   PDI_SDF_FILTER {
-//     }
-//   }
+//
+//	o   PDI_F_TEID {
+//	      F_TEID_I_TEID: u32
+//	      F_TEID_GTPU_ADDR_IPV4: u32
+//	    }
+//
+//	o   PDI_SDF_FILTER {
+//	    }
+//	  }
 func CreatePDR(c *Client, link *Link, pdrid int, attrs []nl.Attr) error {
 	return CreatePDROID(c, link, OID{uint64(pdrid)}, attrs)
 }
@@ -232,4 +234,26 @@ func GetPDRAll(c *Client) ([]PDR, error) {
 		pdrs = append(pdrs, *pdr)
 	}
 	return pdrs, err
+}
+
+func GetPDRStats(c *Client) ([]PDRStats, error) {
+	flags := syscall.NLM_F_DUMP
+	req := nl.NewRequest(c.ID, flags)
+	err := req.Append(genl.Header{Cmd: CMD_GET_PDR_STATS})
+	if err != nil {
+		return nil, err
+	}
+	rsps, err := c.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	var pdrStats []PDRStats
+	for _, rsp := range rsps {
+		pdrstat, err := DecodePDRStats(rsp.Body[genl.SizeofHeader:])
+		if err != nil {
+			return nil, err
+		}
+		pdrStats = append(pdrStats, *pdrstat)
+	}
+	return pdrStats, err
 }

@@ -491,3 +491,44 @@ func CmdListPDR(args []string) error {
 	fmt.Printf("%s\n", j)
 	return nil
 }
+
+// list pdr
+func CmdListPDRStats(args []string) error {
+	var wg sync.WaitGroup
+	mux, err := nl.NewMux()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		mux.Close()
+		wg.Wait()
+	}()
+	wg.Add(1)
+	go func() {
+		mux.Serve()
+		wg.Done()
+	}()
+
+	conn, err := nl.Open(syscall.NETLINK_GENERIC)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	c, err := gtp5gnl.NewClient(conn, mux)
+	if err != nil {
+		return err
+	}
+
+	pdrs, err := gtp5gnl.GetPDRStats(c)
+	if err != nil {
+		return err
+	}
+
+	j, err := json.MarshalIndent(pdrs, "", "  ")
+	if err != nil {
+		return err
+	}
+	fmt.Printf("%s\n", j)
+	return nil
+}
